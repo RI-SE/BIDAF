@@ -183,13 +183,18 @@ class ClusterModel():
             mx = min(sigs)
             if mx < 0.001:
                 ss = self.gmm.split(sigs.index(mx), ss)
-                ss = self.gmm.estimate_ss(df, False, self.prior, ss, 100, 0.00001)
+                if len(df) > 1600*len(ss):
+                    ss = self.gmm.estimate_ss_sample(df, False, self.prior, ss, 800*len(ss), 60, 0.0001)
+                else:
+                    ss = self.gmm.estimate_ss(df, False, self.prior, ss, 80, 0.0001)
                 y = [smaxind(ss,i) for i in range(len(self.data))]
                 self.perm = samecolor(self.lasty, y, self.perm)
                 self.lasty = y
                 loop += 1
             else:
                 loop = self.maxsplit
+        if len(df) > 1600*len(ss):
+            ss = self.gmm.estimate_ss(df, False, self.prior, ss, 40, 0.0001)
         self.version += 1
         self.changed = True
         

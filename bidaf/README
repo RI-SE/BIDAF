@@ -1,0 +1,191 @@
+The BIDAF data analysis toolkit
+
+This package illustrates the data analysis tools developed in the
+BIDAF project (A Big Data Analytics Framework), funded by KKS and
+running between 2015 - 2020, with participants RISE, Halmstad
+University, and University of Skövde.
+
+The developed statistical machine learning methods for discovering and
+visualizing unsupervised structure in data, which could potentially be
+large and streaming. The type of structures discovered are: Clusters,
+Anomalies, Causal relations, and Higher order similarity relations.
+
+This package is a simple demo version. It has several
+shortcomings. For example, it is rather picky about the data format,
+can only handle numerical values (not symbolic/strings), and there
+must be no missing features. Many of the analysis methods are also
+quite slow, since they are implemented directly in python, which means
+that the data for this version should preferrably not be so big after
+all - more than 10000 samples or some tens of attributes will be
+painfully slow. Future versions of the package may be enhanced.
+
+
+  How to start it
+
+To run it you need python-3.0 with its standard packages installed
+(like matplotlib, tkinter, sklearn, and pandas)
+
+It is expecting the data to be in csv format (Comma Separated Values,
+but the separator can actually be comma, semicolon, or tab) with
+samples row-wise and different features column-wise. The analysed data
+should be numerical, and not have any missing values. The data may
+come in time series, in which case there should be a time stamp
+column. It may also come from separate "entities", which should then
+have their identities in some column (and which may represented as
+strings).
+
+You can run it in two modes, batch or streaming. In batch mode
+training of the models are performed on the whole data set first,
+before showing anything, and depending on the size of the data it may
+take some time (several hours for large data files). In streaming
+mode, data are fed incrementally to the models, and shown as it
+arrives. The models are updated regularly. On a large dataset you will
+be able to see something immediately, but it will take even longer
+time to get through all the data, since the display is continuously
+updated and the models retrained several times.
+
+To start it in batch mode, write on the command line:
+  python3 bidaf
+
+To start it in streaming mode, write:
+  python3 bidaf_stream
+
+First a window pops up where you can select the data file and give
+some parameters. If the fields in the file are not separated by
+commas, you may tick either semicolon or tab in the first row. Then
+select the file browser to pick the data file. The first row in the
+file is supposed to contain the column names. They will be shown in
+the feature list further down. Here some columns can be deselected if
+they should be ignored (for example because they are constant or not
+numerical or contain unknown values). If the data comes from several
+entities that should be considered separately, a column with entity
+identities may be selected in a drop down meny. If the data comes in
+time series, a column with a time stamp may be selected in another
+drop down meny.
+
+Now, if a time stamp columns is selected, a scale and stride length
+should be provided. This is to handle for example irregularly sampled,
+slow moving, or noisy time series, so that they are smoothed (using a
+Gaussian filter with the scale as standard deviation) and resampled at
+regular intervals (given by the stride). (Note that it is not
+meaningful to have a stride shorter than the scale, because then the
+data will hardly change between samples) It can also be used to study
+the data at different time scales by varying this parameter. It is
+here also possible to expand the smoothed features with the local
+slope and variance.
+
+Then press start. In batch mode it will start analysis, and then open
+the main window to show the data and the analysis results. In
+streaming mode it will first open the main window, and then gradually
+show and analyse data as it arrives.
+
+
+  What is shown in the main window
+
+The main window is divided in several compartments. In the top left are
+the data file name and the number of data samples (read so far, if in
+streaming mode).
+
+If there are any entities in the data, they are shown as squares below
+the file name. Under the entities is a dependency graph between the
+features, shown as circles with lines between. To the upper left are
+a number of time series plot, and below them a scatter plot.
+
+The axes of the scatter plot are initially the two largest PCA
+axes. Which features to show on the axes can be selected by clicking
+on the feature circles in the dependency graph to the left. The last
+two clicked features will be shown on the axes. Clicking a link shows
+the two features it connects. Clocking outside of the nodes and links
+(but still in the graph area) restores the scatter plot to show the
+two largest PCA axes. If there are entities, clicking on an entity
+square will show the data related to this entity. (Non-selected data
+is still shown but in the background as light gray.) By shift-clicking
+the entity squares it is possible to selecte several entities to show
+at once. When no entity is selected, all data is shown.
+
+The time series plot area will initially only show a time series of
+anomaly scores. By clicking on features or links in the graph, time
+series plots for those features are shown. Up to three feature time
+series can be shown at once. If there are several entities, each
+entity has its own curve in each plot. Again, by selecting entities by
+clicking in the entity squares, only the corresponding curves will be
+shown. The time series can be zoomed in or out by the scroll-wheel on
+the mouse, and panned sideways by dragging. If there is no timestamp
+in the data, the x-axis of the time series plots will correspond to
+the index of each data sample instead of the time.
+
+The colors in the scatter plot and time series plot, as well as on the
+entity squares, do *not* correspond to the different entities as might
+be expected. Instead they correspond to cluster indices detected by
+the clustering algorithm. (The color of the entity squares correspond
+to the cluster index of the last seen data point of that entity.) The
+clustering model is a Gaussian mixture model, which tries to adjust to
+the number of clusters by incrementally splitting clusters that are
+not sufficiently homogeneous (i.e which can be with sufficient
+significance shown not to originate from a single Gaussian). There is
+in this version no way to remove superfluous clusters. Outlines
+indicating one standard deviation out from the centers of the Gaussian
+components are shown as black ellipses in the scatter plot.
+
+There is also an anomaly detection algorithm included. In this version
+of the package it is based on the Gaussian mixture model, by
+indicating samples that are too far from all mixture components as
+anomalous. Such "outlier" points do not belong to any cluster, but are
+instead colored in a scale from dark gray to black depending on the
+anomaly score (blacker means higher score, i.e farther away). The
+anomaly score is also shown in the lowest time series plot.
+
+The dependency graph on the left side of the window also require some
+explanation. The circles representing the different features are
+initially completely randomly placed. With the mouse they can be
+dragged to better positions, to easier see how they are related. the
+colors of the links mean quite different things than in the other
+plots. First, one can distinguish between indirect correlation and
+direct correlation. An indirect correlation means that the features
+have a statistical correlation, but which can be explained as the
+effect of a sequence of direct correlations. That is, if C dependes on
+B and B depends on A, there may appear a statistical correlation
+between A and C although they are not directly affecting each
+other. Indirect correlations are shown as gray links. The intensity
+indicates the strength, as do the small (black) number next to the
+link. In contrast, blue links (also with intensity and number
+indicating the strength) represent direct correlations, i.e
+correlations that can not be explained by indirect effects via other
+features in the data. (As always, there may be features not present in
+the data which mediates an effect between two seemingly directly
+correlated features.) In this version of the program, all correlations
+are Pearson correlation coefficients, which only measure the linear
+part of the correlation between features. Specifically it does not
+consider any of the detected clusters in the data, but the correlation
+is calculated as if data comes from a single multivariate Gaussian.
+
+The "skeleton" of direct blue links as opposed to the indirect grey
+links, may in itself be a useful structure. However, on top of this is
+an algorithm which tries to detect the causal direction of some of the
+links. In general it may not be possible to unambiguosly detect the
+causal direction of all links just from analysing the data, but for
+some links there may be hints that can be used. The current algorithm
+is an instantiation of th PC algorithm for causal discovery, which may
+detect two converging causal links by testing for causal independence
+between the two causing ends of the links. When the causal direction
+can be derived for a link in this way, the link is shown in purple,
+with an arrow pointing in the causal direction (from cause to
+effect). The purple number next to the link is the causal strength of
+the link, i.e how much the affected end will be affected if the
+causing end changes.
+
+Finally there is an algorithm for detecting higher order similarity
+relations. Such relations are shown as green links. A higher order
+relation means that although the features are not strongly correlated
+to each other, they have a similar pattern of correlations to all
+other features. One example is if there are two features that are not
+at all correlated with each other, but the affect the other features
+in a similar way. This may indicate that the features have similar
+"roles" or similar "meanings". This kind of structure is highly useful
+in analysing e.g the relations between words or concepts, but it is
+somewhat experimental to use for numerical data, so the usefulness in
+this context remains to be explored.
+
+
+  Enjoy!
+

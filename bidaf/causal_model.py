@@ -395,4 +395,64 @@ class CausalModel():
             e.hist = h
 
 
+class PlainAttributesModel():
+    def __init__(self):
+        self.header = None
+        self.nodes = []
+        self.reserved_attrs = []
+        self.version = -1
+        self.type = 'PlainAttributesModel'
 
+    def reset_data(self):
+        self.header = None
+
+    def handle_data(self, vecdict):
+        if self.header is None:
+            self.header = [key for key in vecdict if key not in self.reserved_attrs]
+            self.create_nodes()
+            self.version += 1
+        return None
+
+    def handle_batch_data(self, dt):
+        if len(dt)>0:
+            if self.header is None:
+                self.header = [key for key in dt[0] if key not in self.reserved_attrs]
+                self.create_nodes()
+                self.version += 1
+        return None
+
+    def model_type(self):
+        return self.type
+
+    def model_version(self):
+        return self.version
+
+    def extract_model(self):
+        return { 'type': self.type,
+                 'version': self.version,
+                 'nodes': self.nodes,
+                 'links': [],
+                 'hlinks': [] }
+
+    def features_changed(self):
+        return False
+
+    def default_params(self):
+        return { 'index_attribute': False,
+                 'time_attribute': False,
+                 'entity_attribute': False}
+
+    def set_params(self, dic):
+        if 'index_attribute' in dic:
+            self.reserved_attrs.append(dic['index_attribute'])
+        if 'time_attribute' in dic:
+            self.reserved_attrs.append(dic['time_attribute'])
+        if 'entity_attribute' in dic:
+            self.reserved_attrs.append(dic['entity_attribute'])
+
+    #-------------------------------------------
+
+    def create_nodes(self):
+        self.nodes = []
+        for name in self.header:
+            self.nodes.append(Node(self, name))

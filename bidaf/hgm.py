@@ -800,6 +800,50 @@ class MixtureModel(Model):
                 break
         return ss
 
+    def estimate_ss_sample(self, data0, weights, prior, ss0, samplesize, maxiter, mindiff):
+        dnum = len(data0)
+        knum = len(self.models)
+        ss = [[0.0 for i in range(samplesize)] for j in range(knum)]
+        sst = [[0.0 for i in range(samplesize)] for j in range(knum)]
+        rst = sorted(sample(range(dnum), samplesize))
+        iter = 0
+        while True:
+            # slumpa ut submängd
+            #if iter % 10 == 0:
+            rs = sorted(sample(range(dnum), samplesize))
+            data = data0[[i in rs for i in range(dnum)]]
+            # beräkna ss för denna
+            if iter==0:
+                for i in range(samplesize):
+                    for k in range(knum):
+                        ss[k][i] = ss0[k][rs[i]]
+            else:
+                for i in range(samplesize):
+                    v = normalizelogs([m.logprobability(data.iloc[i]) + log(p) for m,p in zip(self.models,self.probs)],
+                                      weights[rs[i]] if weights is not False else 1.0)
+                    for k in range(knum):
+                        ss[k][i] = v[k]
+            counts = [prior.alpha/knum + sum(ss[k]) for k in range(knum)]
+            s = sum(counts)
+            for k in range(knum):
+                self.models[k].estimate(data, ss[k], prior.prior)
+                self.probs[k] = (counts[k] + 1)/(s + knum)
+            diff = 0.0
+            mdiff = 0.0
+            for i in range(samplesize):
+                v = normalizelogs([m.logprobability(data0.iloc[rst[i]]) + log(p) for m,p in zip(self.models,self.probs)],
+                                  weights[rst[i]] if weights is not False else 1.0)
+                for k in range(knum):
+                    delta = abs(v[k] - sst[k][i])
+                    diff += delta
+                    mdiff = max(mdiff, delta)
+                    sst[k][i] = v[k]
+            iter += 1
+            print(iter, len(data), diff, mdiff)
+            if mdiff < mindiff or iter >= maxiter:
+                break
+        return self.get_ss(data0, weights)
+
     def split(self, kind, ss):
         self.probs.insert(kind+1, 0.0)
         self.models.insert(kind+1, self.models[kind].copy_struct())

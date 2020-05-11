@@ -890,7 +890,13 @@ class GraphVisualizer():
                                       discrete(self.win.width-self.win.radius*2) + self.win.radius,
                                       discrete(self.win.height-self.win.radius*2) + self.win.radius)
                 self.win.set_link(r[0][0], r[0][1], "Highorder", r[1])
-
+        elif moddic['type'] == 'PlainAttributesModel':
+            nodes = moddic['nodes']
+            for n in nodes:
+                if not n.name in self.win.nodes:
+                    self.win.add_node(n.name,
+                                      discrete(self.win.width-self.win.radius*2) + self.win.radius,
+                                      discrete(self.win.height-self.win.radius*2) + self.win.radius)
 
     def redraw_features(self):
         pass

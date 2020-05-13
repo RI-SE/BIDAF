@@ -298,10 +298,15 @@ def get_covar_data(data, attrs):
         for i in range(len(attrs)):
             for j in range(len(attrs)):
                 covar[i][j] += (vec[attrs[i]] - mean[i])*(vec[attrs[j]] - mean[j])
-    if num > 0.0:
-        for i in range(len(attrs)):
-            for j in range(len(attrs)):
-                covar[i][j] /= num
+    for i in range(len(attrs)):
+        for j in range(len(attrs)):
+            if i==j:
+                if covar[i][j] > 0.0:
+                    covar[i][j] /= num
+                else:
+                    covar[i][j] = 1
+            else:
+                covar[i][j] /= num+1
     return covar
 
 def get_trivar_data(data, attrs):

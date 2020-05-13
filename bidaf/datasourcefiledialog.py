@@ -76,7 +76,7 @@ class FileDialog:
         Label(self.root, text="File separator:").grid(row=0, sticky=E)
 
         for i, s in enumerate(seps):
-            Radiobutton(self.root, text=s[0], variable=self.sep, value=s[1]).grid(row=0, column=i+1, sticky=W)
+            Radiobutton(self.root, text=s[0], variable=self.sep, value=s[1], command=self.sep_selected).grid(row=0, column=i+1, sticky=W)
 
         ######## file selector
         Label(self.root, text="Open File:").grid(row=1, sticky=E)
@@ -150,7 +150,12 @@ class FileDialog:
             item['state'] = state
 
     def file_selector(self):
-        self.file_path = filedialog.askopenfilename()
+        self.file_path = filedialog.askopenfilename()  # returns an empty string on cancel, not None.
+        if self.file_path:
+            self.file_loader()  ## to load and parse the selected file
+
+
+    def file_loader(self):
 
         try:
             self.df = pd.read_csv(self.file_path, sep=self.sep.get(), infer_datetime_format=True, keep_date_col=True)
@@ -159,12 +164,12 @@ class FileDialog:
             self.start_btn['state'] = NORMAL
         except:
             self.file_label['text'] = "Error loading file!"
-            self.file_path = None
+            self.file_path = ''
             self.file_loaded = False
             self.start_btn['state'] = DISABLED
             return
 
-        print(list(self.df.columns))
+        # print(list(self.df.columns))
         self.columns = list(self.df.columns)
 
         ######## Fill selectors
@@ -173,6 +178,10 @@ class FileDialog:
 
         self.col_selector_var.set(self.columns)
         self.col_selector.select_set(0, END)
+
+    def sep_selected(self): # called when separator radio button selected
+        if self.file_path:
+            self.file_loader()  # reopens the file using the new separator
 
     def option_selected(self, event):
         e = self.entity_selector.current()
@@ -232,7 +241,7 @@ class FileDialog:
             self.raw_data_dict = self.df.to_dict(orient='records')
             self.raw_data_index = 0
             self.filter = GaussFilter(self.deliver, self.time, self.entity, self.raw_features,
-                                      self.stride, [self.scale], slope=self.slope, variance=self.variance) 
+                                      self.stride, [self.scale], slope=self.slope, variance=self.variance)
             self.data_dict = []
             self.all_features = self.filter.resultkeys()
             self.features = [feat for feat in self.all_features if not feat in [self.time, self.entity]]
@@ -317,7 +326,7 @@ class FileDialog:
 # ? get_values
 # ? get_time_now
 # ? get_time_window_seconds
-    
+
 #def main():
 #    pass
 #
